@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rent Ledger — Portfolio Overview</title>
+<style>
+  :root {
+    --bg:#0f1117;--surface:#1a1d27;--surface2:#222636;--border:#2d3148;
+    --text:#e8eaf0;--muted:#8890a8;
+    --red:#e05252;--red-bg:#2a1515;--red-border:#5c2020;
+    --amber:#d9922a;--amber-bg:#271e0f;--amber-border:#5a3a10;
+    --green:#3db87a;--green-bg:#0f2218;--green-border:#1e5c3a;
+    --blue:#4a90e2;--blue-bg:#0f1e36;--blue-border:#1e3d6e;
+    --accent:#5b6af0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5;}
+  .page{max-width:1300px;margin:0 auto;padding:24px 20px 60px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:20px;}
+  .header h1{font-size:22px;font-weight:700;letter-spacing:-.3px;color:#fff;}
+  .header .subtitle{font-size:13px;color:var(--muted);margin-top:3px;}
+  .header-right{text-align:right;font-size:12px;color:var(--muted);}
+  .header-right strong{color:var(--text);display:block;font-size:13px;}
+  .assumptions{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;margin-bottom:20px;font-size:12px;color:var(--muted);}
+  .assumptions strong{color:var(--text);}
+  .alert-bar{background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:14px 18px;margin-bottom:24px;}
+  .alert-title{color:var(--red);font-weight:700;font-size:13px;margin-bottom:10px;}
+  .alert-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .alert-chip{background:rgba(224,82,82,.12);border:1px solid var(--red-border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text);}
+  .alert-chip span{color:var(--red);font-weight:700;}
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:28px;}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+  .kpi .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+  .kpi .value{font-size:22px;font-weight:700;color:#fff;}
+  .kpi .sub{font-size:11px;color:var(--muted);margin-top:3px;}
+  .kpi.danger .value{color:var(--red);}
+  .kpi.success .value{color:var(--green);}
+  .kpi.info .value{color:var(--blue);}
+  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:12px;}
+
+  /* Main ledger */
+  .ledger-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{background:var(--surface2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:11px 16px;text-align:left;white-space:nowrap;}
+  thead th:not(:first-child){text-align:right;}
+  thead th.center{text-align:center;}
+  tbody tr.unit-row{border-top:1px solid var(--border);transition:background .1s;}
+  tbody tr.unit-row:hover{background:var(--surface2);}
+  tbody td{padding:13px 16px;vertical-align:middle;}
+  tbody td:not(:first-child):not(.status-col):not(.action-col){text-align:right;font-variant-numeric:tabular-nums;}
+  .unit-name{font-weight:600;color:#fff;font-size:14px;}
+  .tenant-name{font-size:12px;color:var(--muted);margin-top:2px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;}
+  .badge.behind{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+  .badge.behind-sev{background:rgba(224,82,82,.2);color:#ff7070;border:1px solid #7a2020;}
+  .badge.current{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+  .badge.prepaid{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+  .amount{font-variant-numeric:tabular-nums;}
+  .amount.negative{color:var(--red);}
+  .amount.positive{color:var(--green);}
+  .amount.credit{color:var(--blue);}
+  .last-pay{font-size:12px;color:var(--muted);}
+  .last-pay strong{color:var(--text);}
+  .expand-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all .1s;}
+  .expand-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* Detail / payment ledger */
+  .detail-row{display:none;}
+  .detail-row.open{display:table-row;}
+  .detail-cell{padding:0!important;}
+  .detail-inner{background:#12151f;border-top:1px solid var(--border);padding:0 0 0 0;}
+  .detail-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 10px;}
+  .detail-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+  .detail-summary{font-size:12px;color:var(--muted);}
+
+  /* Payment ledger table inside detail */
+  .ptable{width:100%;border-collapse:collapse;font-size:13px;}
+  .ptable thead th{background:#0d101a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:8px 14px;text-align:center;border-top:1px solid var(--border);}
+  .ptable tbody tr{border-top:1px solid rgba(45,49,72,.6);}
+  .ptable tbody td{padding:8px 14px;vertical-align:middle;font-variant-numeric:tabular-nums;text-align:center;}
+  .ptable tr.r-paid td{background:rgba(15,34,24,.4);}
+  .ptable tr.r-completes td{background:rgba(15,34,24,.25);}
+  .ptable tr.r-partial td{background:rgba(39,30,15,.4);}
+  .ptable tr.r-unpaid td{background:rgba(42,21,21,.5);}
+  .ptable tr.r-credit td{background:rgba(15,30,54,.4);}
+  .payer-tag{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-size:11px;color:var(--text);}
+  .res-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .res-paid{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+  .res-completes{background:rgba(61,184,122,.1);color:#3db87a;border:1px solid var(--green-border);}
+  .res-partial{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);}
+  .res-unpaid{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+  .res-credit{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+  .period-pill{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-size:12px;font-weight:600;color:var(--text);}
+
+  /* Exceptions */
+  .exc-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+  .exc-header{background:var(--amber-bg);border-bottom:1px solid var(--amber-border);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;}
+  .exc-header-title{color:var(--amber);font-weight:700;font-size:13px;}
+  .exc-header-note{font-size:11px;color:var(--muted);}
+  .exc-row td{padding:10px 16px;font-size:13px;}
+  .exc-row:hover{background:var(--surface2);}
+  .exc-type{font-size:11px;color:var(--muted);background:var(--surface2);border-radius:4px;padding:2px 7px;}
+  .footer{font-size:11px;color:var(--muted);text-align:center;margin-top:40px;border-top:1px solid var(--border);padding-top:20px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div>
+    <h1>Rental Portfolio — Rent Ledger</h1>
+    <div class="subtitle">8 units &nbsp;·&nbsp; Chase #9285 &nbsp;·&nbsp; Jul 2025 – Jun 2026</div>
+  </div>
+  <div class="header-right"><strong>As of June 3, 2026</strong>Updated June 3, 2026</div>
+</div>
+
+<div class="assumptions">
+  <strong>Baseline assumptions:</strong> &nbsp;All rents current as of June 20, 2025 &nbsp;·&nbsp; Schedules begin July 1, 2025 (1614 N Newkirk begins Oct 1, 2025) &nbsp;·&nbsp; 1417 N 18th #2 reduced to $1,150/mo effective Oct 2025
+</div>
+
+<div class="alert-bar">
+  <div class="alert-title">⚠ 5 of 8 units have outstanding balances — $13,306 total</div>
+  <div class="alert-chips">
+    <div class="alert-chip">1417 N 18th #3 &nbsp;<span>$5,234 · 5 mos</span></div>
+    <div class="alert-chip">1417 N 18th #1 &nbsp;<span>$4,850 · 4 mos</span></div>
+    <div class="alert-chip">1417 N 18th #2 &nbsp;<span>$1,705 · 2 mos</span></div>
+    <div class="alert-chip">1712 N Dover &nbsp;<span>$1,475 · 1 mo</span></div>
+    <div class="alert-chip">1240 Patrick Henry &nbsp;<span>$42 · partial</span></div>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="label">Total Expected</div><div class="value">$142,500</div><div class="sub">Jul 2025 – Jun 2026</div></div>
+  <div class="kpi success"><div class="label">Total Collected</div><div class="value">$132,544</div><div class="sub">93.0% collection rate</div></div>
+  <div class="kpi danger"><div class="label">Outstanding</div><div class="value">$13,306</div><div class="sub">Across 5 units</div></div>
+  <div class="kpi danger"><div class="label">Units Behind</div><div class="value">5 / 8</div><div class="sub">3 current or better</div></div>
+  <div class="kpi info"><div class="label">Prepaid Credit</div><div class="value">$3,350</div><div class="sub">2 units ahead</div></div>
+</div>
+
+<div class="section-title">Unit Ledger</div>
+<div class="ledger-wrap">
+  <table>
+    <thead><tr>
+      <th>Unit / Tenants</th><th>Rent/mo</th><th>Expected</th>
+      <th>Received</th><th>Balance</th><th class="center">Status</th>
+      <th>Last Payment</th><th class="center">Detail</th>
+    </tr></thead>
+    <tbody id="ledgerBody"></tbody>
+  </table>
+</div>
+
+<div class="section-title">Exceptions — Unmatched Deposits</div>
+<div class="exc-wrap">
+  <div class="exc-header">
+    <div class="exc-header-title">⚠ 20 unmatched transactions on file</div>
+    <div class="exc-header-note">Naiya McClay = prior tenant at 1614 N Newkirk (Jun–Sep 2025, $2,300) · own transfers · check deposits</div>
+  </div>
+  <table>
+    <thead><tr><th>Date</th><th>Amount</th><th style="text-align:left">Description</th><th style="text-align:left">Classification</th></tr></thead>
+    <tbody id="excBody"></tbody>
+  </table>
+</div>
+
+<div class="footer">Rent Reconciliation · Chase #9285 · Baseline: all rents current Jun 20, 2025 · Schedules begin Jul 2025 · Oldest-first payment application · Bookkeeping aid only.</div>
+</div>
+
+<script>
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtP(p){if(!p||p==='Credit')return'Prepaid Credit';const[y,m]=p.split('-');return`${MO[+m-1]} '${y.slice(2)}`;}
+const fmt=n=>'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtD=d=>{if(!d)return'';const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});};
+const fmtDs=d=>{if(!d)return'';const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('en-US',{month:'M/d/yy'}).replace('M/d/yy',()=>`${dt.getMonth()+1}/${dt.getDate()}/${String(dt.getFullYear()).slice(2)}`);};
+
+// Short date formatter
+function sd(d){if(!d)return'';const dt=new Date(d+'T12:00:00');return`${dt.getMonth()+1}/${dt.getDate()}/${String(dt.getFullYear()).slice(2)}`;}
+
+const UNITS=[
+  {id:"UNIT-8",unit:"1417 N 18th St #3",tenants:"Lorisha Williams & Carolyn Lewis",
+   rent:"$1,250",expected:15000,received:9766,balance:5234,open:5,lastDate:"2026-04-06",lastAmt:1000},
+  {id:"UNIT-6",unit:"1417 N 18th St #1",tenants:"Takeema Brown & Vontez Shepard",
+   rent:"$1,300",expected:15600,received:10750,balance:4850,open:4,lastDate:"2026-05-22",lastAmt:500},
+  {id:"UNIT-7",unit:"1417 N 18th St #2",tenants:"Yasmeen Sayles, Jannel Lemmon, Virtuous Frye, Yessenia Wilhelm",
+   rent:"$1,250→$1,150",expected:14100,received:12395,balance:1705,open:2,lastDate:"2026-05-22",lastAmt:250},
+  {id:"UNIT-5",unit:"1712 N Dover St",tenants:"Cera Jones",
+   rent:"$1,550",expected:18600,received:17125,balance:1475,open:1,lastDate:"2026-06-01",lastAmt:900},
+  {id:"UNIT-2",unit:"1240 Patrick Henry",tenants:"Andres Vasquez-Lopez",
+   rent:"$2,000",expected:24000,received:23958,balance:42,open:1,lastDate:"2026-05-29",lastAmt:1958},
+  {id:"UNIT-4",unit:"1615 N Newkirk",tenants:"Anne Reynolds",
+   rent:"$1,600",expected:19200,received:19200,balance:0,open:0,lastDate:"2026-06-03",lastAmt:1600},
+  {id:"UNIT-1",unit:"1435 N. 29th St",tenants:"Casey Broadway-Dougherty & John Wylie",
+   rent:"$1,800",expected:21600,received:22500,balance:-900,open:0,lastDate:"2026-06-01",lastAmt:900},
+  {id:"UNIT-3",unit:"1614 N Newkirk",tenants:"Jake Oravec & Max Husten",
+   rent:"$1,600",expected:14400,received:16850,balance:-2450,open:0,lastDate:"2026-06-01",lastAmt:1400}
+];
+
+const LEDGERS={
+  "UNIT-1":{lines:[{date:"2025-06-02",payer:"John",paid:900,period:"2025-07",rent:1800,applied:900,result:"partial"},{date:"2025-07-01",payer:"Casey",paid:900,period:"2025-07",rent:1800,applied:900,result:"completes"},{date:"2025-07-01",payer:"John",paid:900,period:"2025-08",rent:1800,applied:900,result:"partial"},{date:"2025-08-01",payer:"Casey",paid:900,period:"2025-08",rent:1800,applied:900,result:"completes"},{date:"2025-08-01",payer:"John",paid:900,period:"2025-09",rent:1800,applied:900,result:"partial"},{date:"2025-08-29",payer:"John",paid:900,period:"2025-09",rent:1800,applied:900,result:"completes"},{date:"2025-08-29",payer:"Casey",paid:900,period:"2025-10",rent:1800,applied:900,result:"partial"},{date:"2025-09-26",payer:"John",paid:900,period:"2025-10",rent:1800,applied:900,result:"completes"},{date:"2025-10-01",payer:"Casey",paid:900,period:"2025-11",rent:1800,applied:900,result:"partial"},{date:"2025-11-03",payer:"John",paid:900,period:"2025-11",rent:1800,applied:900,result:"completes"},{date:"2025-11-12",payer:"Casey",paid:900,period:"2025-12",rent:1800,applied:900,result:"partial"},{date:"2025-12-01",payer:"John",paid:900,period:"2025-12",rent:1800,applied:900,result:"completes"},{date:"2025-12-01",payer:"Casey",paid:900,period:"2026-01",rent:1800,applied:900,result:"partial"},{date:"2025-12-31",payer:"Casey",paid:900,period:"2026-01",rent:1800,applied:900,result:"completes"},{date:"2026-01-02",payer:"John",paid:900,period:"2026-02",rent:1800,applied:900,result:"partial"},{date:"2026-02-02",payer:"Casey",paid:900,period:"2026-02",rent:1800,applied:900,result:"completes"},{date:"2026-02-02",payer:"John",paid:900,period:"2026-03",rent:1800,applied:900,result:"partial"},{date:"2026-03-02",payer:"Casey",paid:900,period:"2026-03",rent:1800,applied:900,result:"completes"},{date:"2026-03-02",payer:"John",paid:900,period:"2026-04",rent:1800,applied:900,result:"partial"},{date:"2026-03-30",payer:"John",paid:900,period:"2026-04",rent:1800,applied:900,result:"completes"},{date:"2026-04-01",payer:"Casey",paid:900,period:"2026-05",rent:1800,applied:900,result:"partial"},{date:"2026-05-01",payer:"John",paid:900,period:"2026-05",rent:1800,applied:900,result:"completes"},{date:"2026-05-01",payer:"Casey",paid:900,period:"2026-06",rent:1800,applied:900,result:"partial"},{date:"2026-06-01",payer:"Casey",paid:900,period:"2026-06",rent:1800,applied:900,result:"completes"},{date:"2026-06-01",payer:"John",paid:900,period:"Credit",rent:null,applied:900,result:"credit"}],unpaid:[]},
+  "UNIT-2":{lines:[{date:"2025-06-02",payer:"Andres",paid:1000,period:"2025-07",rent:2000,applied:1000,result:"partial"},{date:"2025-07-02",payer:"Andres",paid:1000,period:"2025-07",rent:2000,applied:1000,result:"completes"},{date:"2025-08-04",payer:"Andres",paid:2000,period:"2025-08",rent:2000,applied:2000,result:"paid"},{date:"2025-08-29",payer:"Andres",paid:2000,period:"2025-09",rent:2000,applied:2000,result:"paid"},{date:"2025-09-26",payer:"Andres",paid:2000,period:"2025-10",rent:2000,applied:2000,result:"paid"},{date:"2025-11-07",payer:"Andres",paid:2000,period:"2025-11",rent:2000,applied:2000,result:"paid"},{date:"2025-12-01",payer:"Andres",paid:2000,period:"2025-12",rent:2000,applied:2000,result:"paid"},{date:"2026-01-02",payer:"Andres",paid:2000,period:"2026-01",rent:2000,applied:2000,result:"paid"},{date:"2026-01-30",payer:"Andres",paid:2000,period:"2026-02",rent:2000,applied:2000,result:"paid"},{date:"2026-02-27",payer:"Andres",paid:2000,period:"2026-03",rent:2000,applied:2000,result:"paid"},{date:"2026-04-01",payer:"Andres",paid:2000,period:"2026-04",rent:2000,applied:2000,result:"paid"},{date:"2026-04-29",payer:"Andres",paid:2000,period:"2026-05",rent:2000,applied:2000,result:"paid"},{date:"2026-05-29",payer:"Andres",paid:1958,period:"2026-06",rent:2000,applied:1958,result:"partial"}],unpaid:["2026-06"]},
+  "UNIT-3":{lines:[{date:"2025-06-03",payer:"Max",paid:850,period:"2025-10",rent:1600,applied:850,result:"partial"},{date:"2025-07-02",payer:"Max",paid:850,period:"2025-10",rent:1600,applied:750,result:"completes"},{date:"2025-07-02",payer:"Max",paid:null,period:"2025-11",rent:1600,applied:100,result:"partial"},{date:"2025-08-04",payer:"Max",paid:850,period:"2025-11",rent:1600,applied:850,result:"partial"},{date:"2025-09-02",payer:"Max",paid:850,period:"2025-11",rent:1600,applied:650,result:"completes"},{date:"2025-09-02",payer:"Max",paid:null,period:"2025-12",rent:1600,applied:200,result:"partial"},{date:"2025-09-25",payer:"Max",paid:1400,period:"2025-12",rent:1600,applied:1400,result:"completes"},{date:"2025-10-02",payer:"Max",paid:850,period:"2026-01",rent:1600,applied:850,result:"partial"},{date:"2025-10-06",payer:"Max",paid:550,period:"2026-01",rent:1600,applied:550,result:"partial"},{date:"2025-11-03",payer:"Max",paid:850,period:"2026-01",rent:1600,applied:200,result:"completes"},{date:"2025-11-03",payer:"Max",paid:null,period:"2026-02",rent:1600,applied:650,result:"partial"},{date:"2025-12-03",payer:"Max",paid:850,period:"2026-02",rent:1600,applied:850,result:"partial"},{date:"2025-12-15",payer:"Max",paid:550,period:"2026-02",rent:1600,applied:100,result:"completes"},{date:"2025-12-15",payer:"Max",paid:null,period:"2026-03",rent:1600,applied:450,result:"partial"},{date:"2026-01-02",payer:"Max",paid:1400,period:"2026-03",rent:1600,applied:1150,result:"completes"},{date:"2026-01-02",payer:"Max",paid:null,period:"2026-04",rent:1600,applied:250,result:"partial"},{date:"2026-02-05",payer:"Max",paid:1400,period:"2026-04",rent:1600,applied:1350,result:"completes"},{date:"2026-02-05",payer:"Max",paid:null,period:"2026-05",rent:1600,applied:50,result:"partial"},{date:"2026-03-03",payer:"Max",paid:1400,period:"2026-05",rent:1600,applied:1400,result:"partial"},{date:"2026-04-02",payer:"Max",paid:550,period:"2026-05",rent:1600,applied:150,result:"completes"},{date:"2026-04-02",payer:"Max",paid:null,period:"2026-06",rent:1600,applied:400,result:"partial"},{date:"2026-04-02",payer:"Max",paid:850,period:"2026-06",rent:1600,applied:850,result:"partial"},{date:"2026-05-01",payer:"Max",paid:1400,period:"2026-06",rent:1600,applied:350,result:"completes"},{date:"2026-05-01",payer:"Max",paid:null,period:"Credit",rent:null,applied:1050,result:"credit"},{date:"2026-06-01",payer:"Max",paid:1400,period:"Credit",rent:null,applied:1400,result:"credit"}],unpaid:[]},
+  "UNIT-4":{lines:[{date:"2025-06-02",payer:"Anne",paid:1600,period:"2025-07",rent:1600,applied:1600,result:"paid"},{date:"2025-07-01",payer:"Anne",paid:1600,period:"2025-08",rent:1600,applied:1600,result:"paid"},{date:"2025-08-01",payer:"Anne",paid:1600,period:"2025-09",rent:1600,applied:1600,result:"paid"},{date:"2025-09-02",payer:"Anne",paid:1600,period:"2025-10",rent:1600,applied:1600,result:"paid"},{date:"2025-10-06",payer:"Anne",paid:1600,period:"2025-11",rent:1600,applied:1600,result:"paid"},{date:"2025-11-03",payer:"Anne",paid:1600,period:"2025-12",rent:1600,applied:1600,result:"paid"},{date:"2025-12-01",payer:"Anne",paid:1600,period:"2026-01",rent:1600,applied:1600,result:"paid"},{date:"2026-01-05",payer:"Anne",paid:1600,period:"2026-02",rent:1600,applied:1600,result:"paid"},{date:"2026-02-02",payer:"Anne",paid:1600,period:"2026-03",rent:1600,applied:1600,result:"paid"},{date:"2026-03-02",payer:"Anne",paid:1600,period:"2026-04",rent:1600,applied:1600,result:"paid"},{date:"2026-05-04",payer:"Anne",paid:1600,period:"2026-05",rent:1600,applied:1600,result:"paid"},{date:"2026-06-03",payer:"Anne",paid:1600,period:"2026-06",rent:1600,applied:1600,result:"paid"}],unpaid:[]},
+  "UNIT-5":{lines:[{date:"2025-06-05",payer:"Cera",paid:25,period:"2025-07",rent:1550,applied:25,result:"partial"},{date:"2025-06-05",payer:"Cera",paid:750,period:"2025-07",rent:1550,applied:750,result:"partial"},{date:"2025-06-16",payer:"Cera",paid:1000,period:"2025-07",rent:1550,applied:775,result:"completes"},{date:"2025-06-16",payer:"Cera",paid:null,period:"2025-08",rent:1550,applied:225,result:"partial"},{date:"2025-07-10",payer:"Cera",paid:1000,period:"2025-08",rent:1550,applied:1000,result:"partial"},{date:"2025-07-28",payer:"Cera",paid:1100,period:"2025-08",rent:1550,applied:325,result:"completes"},{date:"2025-07-28",payer:"Cera",paid:null,period:"2025-09",rent:1550,applied:775,result:"partial"},{date:"2025-08-22",payer:"Cera",paid:775,period:"2025-09",rent:1550,applied:775,result:"completes"},{date:"2025-09-05",payer:"Cera",paid:1000,period:"2025-10",rent:1550,applied:1000,result:"partial"},{date:"2025-10-03",payer:"Cera",paid:1325,period:"2025-10",rent:1550,applied:550,result:"completes"},{date:"2025-10-03",payer:"Cera",paid:null,period:"2025-11",rent:1550,applied:775,result:"partial"},{date:"2025-11-03",payer:"Cera",paid:775,period:"2025-11",rent:1550,applied:775,result:"completes"},{date:"2025-11-17",payer:"Cera",paid:775,period:"2025-12",rent:1550,applied:775,result:"partial"},{date:"2025-12-01",payer:"Cera",paid:775,period:"2025-12",rent:1550,applied:775,result:"completes"},{date:"2025-12-30",payer:"Cera",paid:775,period:"2026-01",rent:1550,applied:775,result:"partial"},{date:"2026-01-23",payer:"Cera",paid:1550,period:"2026-01",rent:1550,applied:775,result:"completes"},{date:"2026-01-23",payer:"Cera",paid:null,period:"2026-02",rent:1550,applied:775,result:"partial"},{date:"2026-02-06",payer:"Cera",paid:1000,period:"2026-02",rent:1550,applied:775,result:"completes"},{date:"2026-02-06",payer:"Cera",paid:null,period:"2026-03",rent:1550,applied:225,result:"partial"},{date:"2026-02-23",payer:"Cera",paid:1000,period:"2026-03",rent:1550,applied:1000,result:"partial"},{date:"2026-03-05",payer:"Cera",paid:1850,period:"2026-03",rent:1550,applied:325,result:"completes"},{date:"2026-03-05",payer:"Cera",paid:null,period:"2026-04",rent:1550,applied:1525,result:"partial"},{date:"2026-03-11",payer:"Cera",paid:750,period:"2026-04",rent:1550,applied:25,result:"completes"},{date:"2026-03-11",payer:"Cera",paid:null,period:"2026-05",rent:1550,applied:725,result:"partial"},{date:"2026-06-01",payer:"Cera",paid:900,period:"2026-05",rent:1550,applied:825,result:"completes"},{date:"2026-06-01",payer:"Cera",paid:null,period:"2026-06",rent:1550,applied:75,result:"partial"}],unpaid:["2026-06"]},
+  "UNIT-6":{lines:[{date:"2025-07-01",payer:"Vontez",paid:1300,period:"2025-07",rent:1300,applied:1300,result:"paid"},{date:"2025-08-04",payer:"Vontez",paid:450,period:"2025-08",rent:1300,applied:450,result:"partial"},{date:"2025-08-12",payer:"Vontez",paid:650,period:"2025-08",rent:1300,applied:650,result:"partial"},{date:"2025-09-02",payer:"Vontez",paid:200,period:"2025-08",rent:1300,applied:200,result:"completes"},{date:"2025-09-29",payer:"Vontez",paid:1300,period:"2025-09",rent:1300,applied:1300,result:"paid"},{date:"2025-10-27",payer:"Takeema",paid:1000,period:"2025-10",rent:1300,applied:1000,result:"partial"},{date:"2025-11-07",payer:"Takeema",paid:300,period:"2025-10",rent:1300,applied:300,result:"completes"},{date:"2025-12-05",payer:"Takeema",paid:500,period:"2025-11",rent:1300,applied:500,result:"partial"},{date:"2026-01-16",payer:"Takeema",paid:500,period:"2025-11",rent:1300,applied:500,result:"partial"},{date:"2026-02-18",payer:"Takeema",paid:1300,period:"2025-11",rent:1300,applied:300,result:"completes"},{date:"2026-02-18",payer:"Takeema",paid:null,period:"2025-12",rent:1300,applied:1000,result:"partial"},{date:"2026-02-27",payer:"Takeema",paid:1000,period:"2025-12",rent:1300,applied:300,result:"completes"},{date:"2026-02-27",payer:"Takeema",paid:null,period:"2026-01",rent:1300,applied:700,result:"partial"},{date:"2026-04-10",payer:"Takeema",paid:700,period:"2026-01",rent:1300,applied:600,result:"completes"},{date:"2026-04-10",payer:"Takeema",paid:null,period:"2026-02",rent:1300,applied:100,result:"partial"},{date:"2026-04-27",payer:"Takeema",paid:550,period:"2026-02",rent:1300,applied:550,result:"partial"},{date:"2026-05-08",payer:"Takeema",paid:500,period:"2026-02",rent:1300,applied:500,result:"partial"},{date:"2026-05-22",payer:"Takeema",paid:500,period:"2026-02",rent:1300,applied:150,result:"completes"},{date:"2026-05-22",payer:"Takeema",paid:null,period:"2026-03",rent:1300,applied:350,result:"partial"}],unpaid:["2026-03","2026-04","2026-05","2026-06"]},
+  "UNIT-7":{lines:[{date:"2025-06-30",payer:"Yessenia",paid:320,period:"2025-07",rent:1250,applied:320,result:"partial"},{date:"2025-06-30",payer:"Yessenia",paid:930,period:"2025-07",rent:1250,applied:930,result:"completes"},{date:"2025-07-29",payer:"Yessenia",paid:1000,period:"2025-08",rent:1250,applied:1000,result:"partial"},{date:"2025-07-30",payer:"Yessenia",paid:250,period:"2025-08",rent:1250,applied:250,result:"completes"},{date:"2025-09-02",payer:"Yessenia",paid:1000,period:"2025-09",rent:1250,applied:1000,result:"partial"},{date:"2025-09-03",payer:"Yessenia",paid:250,period:"2025-09",rent:1250,applied:250,result:"completes"},{date:"2025-09-29",payer:"Yessenia",paid:1000,period:"2025-10",rent:1150,applied:1000,result:"partial"},{date:"2025-09-30",payer:"Yessenia",paid:250,period:"2025-10",rent:1150,applied:150,result:"completes"},{date:"2025-09-30",payer:"Yessenia",paid:null,period:"2025-11",rent:1150,applied:100,result:"partial"},{date:"2025-10-27",payer:"Yessenia",paid:1000,period:"2025-11",rent:1150,applied:1000,result:"partial"},{date:"2025-10-28",payer:"Yessenia",paid:150,period:"2025-11",rent:1150,applied:50,result:"completes"},{date:"2025-10-28",payer:"Yessenia",paid:null,period:"2025-12",rent:1150,applied:100,result:"partial"},{date:"2025-12-01",payer:"Yessenia",paid:1000,period:"2025-12",rent:1150,applied:1000,result:"partial"},{date:"2025-12-02",payer:"Yessenia",paid:150,period:"2025-12",rent:1150,applied:50,result:"completes"},{date:"2025-12-02",payer:"Yessenia",paid:null,period:"2026-01",rent:1150,applied:100,result:"partial"},{date:"2026-01-12",payer:"Yessenia",paid:765,period:"2026-01",rent:1150,applied:765,result:"partial"},{date:"2026-01-21",payer:"Yessenia",paid:385,period:"2026-01",rent:1150,applied:285,result:"completes"},{date:"2026-01-21",payer:"Yessenia",paid:null,period:"2026-02",rent:1150,applied:100,result:"partial"},{date:"2026-02-03",payer:"Yessenia",paid:770,period:"2026-02",rent:1150,applied:770,result:"partial"},{date:"2026-02-27",payer:"Yessenia",paid:770,period:"2026-02",rent:1150,applied:280,result:"completes"},{date:"2026-02-27",payer:"Yessenia",paid:null,period:"2026-03",rent:1150,applied:490,result:"partial"},{date:"2026-03-02",payer:"Yessenia",paid:385,period:"2026-03",rent:1150,applied:385,result:"partial"},{date:"2026-04-10",payer:"Yessenia",paid:770,period:"2026-03",rent:1150,applied:275,result:"completes"},{date:"2026-04-10",payer:"Yessenia",paid:null,period:"2026-04",rent:1150,applied:495,result:"partial"},{date:"2026-05-15",payer:"Yasmeen",paid:1000,period:"2026-04",rent:1150,applied:655,result:"completes"},{date:"2026-05-15",payer:"Yasmeen",paid:null,period:"2026-05",rent:1150,applied:345,result:"partial"},{date:"2026-05-22",payer:"Yasmeen",paid:250,period:"2026-05",rent:1150,applied:250,result:"partial"}],unpaid:["2026-05","2026-06"]},
+  "UNIT-8":{lines:[{date:"2025-08-04",payer:"Carolyn",paid:250,period:"2025-07",rent:1250,applied:250,result:"partial"},{date:"2025-08-04",payer:"Lorisha",paid:1000,period:"2025-07",rent:1250,applied:1000,result:"completes"},{date:"2025-09-04",payer:"Lorisha",paid:1000,period:"2025-08",rent:1250,applied:1000,result:"partial"},{date:"2025-09-08",payer:"Lorisha",paid:250,period:"2025-08",rent:1250,applied:250,result:"completes"},{date:"2025-10-06",payer:"Lorisha",paid:1000,period:"2025-09",rent:1250,applied:1000,result:"partial"},{date:"2025-10-07",payer:"Lorisha",paid:250,period:"2025-09",rent:1250,applied:250,result:"completes"},{date:"2025-11-03",payer:"Lorisha",paid:853,period:"2025-10",rent:1250,applied:853,result:"partial"},{date:"2025-11-04",payer:"Lorisha",paid:397,period:"2025-10",rent:1250,applied:397,result:"completes"},{date:"2025-12-04",payer:"Lorisha",paid:1000,period:"2025-11",rent:1250,applied:1000,result:"partial"},{date:"2026-01-08",payer:"Lorisha",paid:1000,period:"2025-11",rent:1250,applied:250,result:"completes"},{date:"2026-01-08",payer:"Lorisha",paid:null,period:"2025-12",rent:1250,applied:750,result:"partial"},{date:"2026-01-09",payer:"Lorisha",paid:299,period:"2025-12",rent:1250,applied:299,result:"partial"},{date:"2026-02-09",payer:"Lorisha",paid:1000,period:"2025-12",rent:1250,applied:201,result:"completes"},{date:"2026-02-09",payer:"Lorisha",paid:null,period:"2026-01",rent:1250,applied:799,result:"partial"},{date:"2026-04-06",payer:"Lorisha",paid:467,period:"2026-01",rent:1250,applied:451,result:"completes"},{date:"2026-04-06",payer:"Lorisha",paid:null,period:"2026-02",rent:1250,applied:16,result:"partial"},{date:"2026-04-06",payer:"Lorisha",paid:1000,period:"2026-02",rent:1250,applied:1000,result:"partial"}],unpaid:["2026-02","2026-03","2026-04","2026-05","2026-06"]}
+};
+
+const EXCEPTIONS=[
+  {date:"2026-05-06",amt:190,desc:"ORIG CO NAME:ROCKET MORTGAGE  ORIG ID:0000452701",type:"Mortgage ACH"},
+  {date:"2026-05-05",amt:1250,desc:"Online Transfer 29086569544 from Jordan WF Checking",type:"Own Transfer"},
+  {date:"2026-04-14",amt:4415,desc:"REMOTE ONLINE DEPOSIT #1",type:"Check Deposit"},
+  {date:"2026-04-06",amt:2645.75,desc:"REMOTE ONLINE DEPOSIT #1",type:"Check Deposit"},
+  {date:"2026-04-03",amt:2500,desc:"Online Transfer 28669666995 from Jordan WF Checking",type:"Own Transfer"},
+  {date:"2026-04-02",amt:700,desc:"Online Transfer from CHK ...7568 transaction#: 28677511",type:"Own Transfer"},
+  {date:"2026-02-02",amt:200,desc:"Online Transfer from CHK ...7568 transaction#: 27930013",type:"Own Transfer"},
+  {date:"2026-01-02",amt:2500,desc:"Online Transfer from CHK ...7568 transaction#: 27561531",type:"Own Transfer"},
+  {date:"2025-12-11",amt:367.25,desc:"REMOTE ONLINE DEPOSIT #1",type:"Check Deposit"},
+  {date:"2025-12-04",amt:1000,desc:"Online Transfer 27184630761 from Jordan WF Checking",type:"Own Transfer"},
+  {date:"2025-11-06",amt:2000,desc:"Online Transfer 26846583935 from Jordan WF Checking",type:"Own Transfer"},
+  {date:"2025-10-03",amt:1000,desc:"Online Transfer from CHK ...7568 transaction#: 26453748",type:"Own Transfer"},
+  {date:"2025-09-03",amt:500,desc:"Online Transfer from CHK ...7568 transaction#: 26091839",type:"Own Transfer"},
+  {date:"2025-09-02",amt:575,desc:"Zelle payment from NAIYA MCCLAY TDP0JH6SFCU3",type:"⚠ Prior Tenant (1614 N Newkirk)"},
+  {date:"2025-08-18",amt:2000,desc:"Online Transfer from CHK ...7568 transaction#: 25885506",type:"Own Transfer"},
+  {date:"2025-08-01",amt:575,desc:"Zelle payment from NAIYA MCCLAY TDP0JGD3ADYP",type:"⚠ Prior Tenant (1614 N Newkirk)"},
+  {date:"2025-07-02",amt:575,desc:"Zelle payment from NAIYA MCCLAY TDP0JFJ1MGRI",type:"⚠ Prior Tenant (1614 N Newkirk)"},
+  {date:"2025-07-01",amt:1000,desc:"Online Transfer from CHK ...7568 transaction#: 25327920",type:"Own Transfer"},
+  {date:"2025-06-09",amt:575,desc:"Zelle payment from NAIYA MCCLAY TDP0JEVHLN2A",type:"⚠ Prior Tenant (1614 N Newkirk)"},
+  {date:"2025-06-03",amt:1000,desc:"Online Transfer from CHK ...7568 transaction#: 24999123",type:"Own Transfer"}
+];
+
+// Build main ledger
+const tbody=document.getElementById('ledgerBody');
+UNITS.forEach((u,i)=>{
+  const neg=u.balance<0,beh=u.balance>0,zero=u.balance===0;
+  let bc='current',bl='✓ CURRENT';
+  if(neg){bc='prepaid';bl=`↑ PREPAID ${fmt(Math.abs(u.balance))}`;}
+  else if(u.balance>=4000){bc='behind-sev';bl=`⚠ BEHIND ${u.open} MOS`;}
+  else if(beh){bc='behind';bl=u.open>1?`⚠ BEHIND ${u.open} MOS`:'⚠ BEHIND';}
+
+  const tr=document.createElement('tr');
+  tr.className='unit-row';
+  tr.innerHTML=`
+    <td><div class="unit-name">${u.unit}</div><div class="tenant-name">${u.tenants}</div></td>
+    <td class="amount">${u.rent}</td>
+    <td class="amount">${fmt(u.expected)}</td>
+    <td class="amount ${u.received<u.expected?'negative':'positive'}">${fmt(u.received)}</td>
+    <td class="amount ${neg?'credit':beh?'negative':zero?'positive':''}">${neg?'('+fmt(Math.abs(u.balance))+')':fmt(u.balance)}</td>
+    <td class="status-col" style="text-align:center"><span class="badge ${bc}">${bl}</span></td>
+    <td class="last-pay"><strong>${fmt(u.lastAmt)}</strong><br>${fmtD(u.lastDate)}</td>
+    <td class="action-col" style="text-align:center"><button class="expand-btn" data-idx="${i}">▼ Ledger</button></td>`;
+  tbody.appendChild(tr);
+
+  // Detail row with payment ledger
+  const dr=document.createElement('tr');
+  dr.className='detail-row';dr.id=`detail-${i}`;
+  const ld=LEDGERS[u.id];
+
+  // Build payment table rows
+  let tableRows='';
+  ld.lines.forEach(ln=>{
+    const rClass=`r-${ln.result}`;
+    const dateCell=ln.paid!==null?`<span style="font-size:12px">${sd(ln.date)}</span>`:'';
+    const payerCell=ln.paid!==null?`<span class="payer-tag">${ln.payer}</span>`:'';
+    const paidCell=ln.paid!==null?fmt(ln.paid):'';
+    const periodCell=`<span class="period-pill">${fmtP(ln.period)}</span>`;
+    const rentCell=ln.rent?`${fmt(ln.rent)}/mo`:'—';
+    const appliedCell=fmt(ln.applied);
+    let resBadge='';
+    if(ln.result==='paid')resBadge='<span class="res-badge res-paid">✓ Paid</span>';
+    else if(ln.result==='completes')resBadge=`<span class="res-badge res-completes">✓ Clears ${fmtP(ln.period)}</span>`;
+    else if(ln.result==='partial')resBadge='<span class="res-badge res-partial">Partial</span>';
+    else if(ln.result==='credit')resBadge='<span class="res-badge res-credit">Credit</span>';
+    tableRows+=`<tr class="${rClass}"><td>${dateCell}</td><td>${payerCell}</td><td>${paidCell}</td><td>${periodCell}</td><td style="color:var(--muted);font-size:12px">${rentCell}</td><td>${appliedCell}</td><td>${resBadge}</td></tr>`;
+  });
+
+  // Add unpaid rows
+  ld.unpaid.forEach(p=>{
+    const rentForPeriod=LEDGERS[u.id].lines.find(l=>l.period===p)?.rent||parseInt(u.rent.replace(/[^0-9]/g,'').replace(/→.*/,''))||0;
+    tableRows+=`<tr class="r-unpaid"><td></td><td></td><td></td><td><span class="period-pill">${fmtP(p)}</span></td><td style="text-align:right;color:var(--muted);font-size:12px">${fmt(rentForPeriod)}/mo</td><td style="text-align:right;color:var(--red)">${fmt(rentForPeriod)}</td><td style="text-align:center"><span class="res-badge res-unpaid">Unpaid</span></td></tr>`;
+  });
+
+  dr.innerHTML=`<td colspan="8" class="detail-cell"><div class="detail-inner">
+    <div class="detail-header">
+      <div class="detail-title">Payment Ledger — ${u.unit}</div>
+      <div class="detail-summary">Oldest-first application &nbsp;·&nbsp; Expected ${fmt(u.expected)} &nbsp;·&nbsp; Received ${fmt(u.received)} &nbsp;·&nbsp; Balance ${neg?'('+fmt(Math.abs(u.balance))+') prepaid':fmt(u.balance)}</div>
+    </div>
+    <table class="ptable">
+      <thead><tr><th>Date</th><th>Payer</th><th>Payment</th><th>Applied To</th><th>Rent/mo</th><th>Amount Applied</th><th class="center">Result</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  </div></td>`;
+  tbody.appendChild(dr);
+});
+
+document.querySelectorAll('.expand-btn').forEach(btn=>{
+  btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const dr=document.getElementById(`detail-${btn.dataset.idx}`);
+    const open=dr.classList.toggle('open');
+    btn.textContent=open?'▲ Close':'▼ Ledger';
+  });
+});
+
+// Exceptions
+const excBody=document.getElementById('excBody');
+EXCEPTIONS.forEach(e=>{
+  const prior=e.type.includes('Prior');
+  const tr=document.createElement('tr');tr.className='exc-row';
+  tr.innerHTML=`<td>${fmtD(e.date)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(e.amt)}</td><td style="font-size:12px;color:#8890a8;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.desc}</td><td><span class="exc-type" style="${prior?'color:#d9922a;border:1px solid #5a3a10;background:#271e0f':''}">${e.type}</span></td>`;
+  excBody.appendChild(tr);
+});
+</script>
+</body>
+</html>
