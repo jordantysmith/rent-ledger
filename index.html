@@ -5,6 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rent Ledger — Portfolio Overview</title>
 <style>
+  #pw-gate{position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center;z-index:99999;}
+  #pw-box{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:40px 48px;text-align:center;width:360px;}
+  #pw-box h2{color:#fff;font-family:'Segoe UI',system-ui,sans-serif;font-size:18px;font-weight:700;margin-bottom:6px;}
+  #pw-box p{color:#8890a8;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;margin-bottom:24px;}
+  #pw-input{width:100%;background:#0f1117;border:1px solid #2d3148;border-radius:8px;color:#e8eaf0;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;padding:11px 14px;outline:none;margin-bottom:12px;}
+  #pw-input:focus{border-color:#5b6af0;}
+  #pw-input.shake{animation:shake .35s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+  #pw-btn{width:100%;background:#5b6af0;border:none;border-radius:8px;color:#fff;cursor:pointer;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;font-weight:600;padding:11px;transition:background .15s;}
+  #pw-btn:hover{background:#4a58d8;}
+  #pw-err{color:#e05252;font-family:'Segoe UI',system-ui,sans-serif;font-size:12px;margin-top:10px;min-height:16px;}
+</style>
+<script>
+(function(){
+  const HASH = '4a11d44047758435110a3e050ca6a26e3b624bf7a481be122c1a9772621cb093';
+  async function sha256(str){
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  function unlock(){document.getElementById('pw-gate').style.display='none';}
+  if(sessionStorage.getItem('rl_auth')==='1'){
+    document.addEventListener('DOMContentLoaded',unlock);
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    if(sessionStorage.getItem('rl_auth')==='1'){unlock();return;}
+    const gate=document.getElementById('pw-gate');
+    const input=document.getElementById('pw-input');
+    const err=document.getElementById('pw-err');
+    async function attempt(){
+      const h=await sha256(input.value);
+      if(h===HASH){
+        sessionStorage.setItem('rl_auth','1');
+        gate.style.display='none';
+      } else {
+        err.textContent='Incorrect password.';
+        input.classList.remove('shake');
+        void input.offsetWidth;
+        input.classList.add('shake');
+        input.value='';
+      }
+    }
+    document.getElementById('pw-btn').addEventListener('click',attempt);
+    input.addEventListener('keydown',function(e){if(e.key==='Enter')attempt();});
+  });
+})();
+</script>
+<style>
   :root {
     --bg:#0f1117;--surface:#1a1d27;--surface2:#222636;--border:#2d3148;
     --text:#e8eaf0;--muted:#8890a8;
@@ -105,6 +152,15 @@
 </style>
 </head>
 <body>
+<div id="pw-gate">
+  <div id="pw-box">
+    <h2>🏠 Rent Ledger</h2>
+    <p>Enter password to access portfolio data</p>
+    <input id="pw-input" type="password" placeholder="Password" autocomplete="current-password" />
+    <button id="pw-btn">Unlock</button>
+    <div id="pw-err"></div>
+  </div>
+</div>
 <div class="page">
 
 <div class="header">
